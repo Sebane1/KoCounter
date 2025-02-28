@@ -1,0 +1,12 @@
+{
+  "Author": "Sebby",
+  "Name": "Ko Counter",
+  "Punchline": "Track your knockouts of other players in PVP!",
+  "Description": "Track your knockouts of other players in PVP!",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "knockout",
+    "counter",
+    "tracker"
+  ]
+}

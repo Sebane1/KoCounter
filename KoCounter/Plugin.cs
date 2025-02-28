@@ -1,12 +1,12 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
+using KoCounter.Windows;
 
-namespace SamplePlugin;
+namespace KoCounter;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -15,15 +15,22 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IPluginLog PluginLog { get; private set; } = null!;
+    [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
+    [PluginService] public static IFramework Framework { get; private set; } = null!;
 
-    private const string CommandName = "/pmycommand";
 
-    public Configuration Configuration { get; init; }
+    private const string CommandName = "/kocounter";
+    private const string CommandName2 = "/koc";
 
-    public readonly WindowSystem WindowSystem = new("SamplePlugin");
-    private ConfigWindow ConfigWindow { get; init; }
+    public static Configuration Configuration { get; set; }
+
+    public readonly WindowSystem WindowSystem = new("KoCounter");
+    private static Logic.KoCounter _koCounter;
+
     private MainWindow MainWindow { get; init; }
+    public KnockoutDisplay KnockoutDisplay { get; }
+    public static Logic.KoCounter KoCounter { get => _koCounter; set => _koCounter = value; }
 
     public Plugin()
     {
@@ -32,15 +39,19 @@ public sealed class Plugin : IDalamudPlugin
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-        ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, goatImagePath);
+        KnockoutDisplay = new KnockoutDisplay(this, goatImagePath);
 
-        WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
+        WindowSystem.AddWindow(KnockoutDisplay);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "Opens knockout counter"
+        });
+        CommandManager.AddHandler(CommandName2, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Opens knockout counter"
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
@@ -52,17 +63,14 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        // Add a simple message to the log with level set to information
-        // Use /xllog to open the log window in-game
-        // Example Output: 00:57:54.959 | INF | [SamplePlugin] ===A cool log message from Sample Plugin===
-        Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
+        _koCounter = new KoCounter.Logic.KoCounter();
     }
 
     public void Dispose()
     {
         WindowSystem.RemoveAllWindows();
 
-        ConfigWindow.Dispose();
+        KnockoutDisplay.Dispose();
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
@@ -71,11 +79,22 @@ public sealed class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        switch (args.ToLower())
+        {
+            case "increment":
+                KoCounter.DebugIncrement();
+                break;
+            case "stats":
+                ToggleConfigUI();
+                break;
+            default:
+                ToggleMainUI();
+                break;
+        }
     }
 
     private void DrawUI() => WindowSystem.Draw();
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
+    public void ToggleConfigUI() => MainWindow.Toggle();
+    public void ToggleMainUI() => KnockoutDisplay.Toggle();
 }
