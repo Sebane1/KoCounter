@@ -23,6 +23,11 @@ public class MainWindow : Window, IDisposable
     private string[] _knockouts = new string[0];
     private string _sessionTime;
     private Knockout _currentKnockout;
+    private int _previousKnockoutCount;
+    private string[] _defeats;
+    private int _previousDefeatCount;
+    private Knockout _currentDefeat;
+    private int _selectedDefeat;
 
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
@@ -71,6 +76,7 @@ public class MainWindow : Window, IDisposable
             {
                 var pluginEnabled = Plugin.Configuration.Enabled;
                 var pluginFontSize = Plugin.Configuration.FontSize;
+                var pluginTextColour = Plugin.Configuration.Colour;
                 if (ImGui.Checkbox("Tracking Enabled", ref pluginEnabled))
                 {
                     Plugin.Configuration.Enabled = pluginEnabled;
@@ -79,6 +85,11 @@ public class MainWindow : Window, IDisposable
                 if (ImGui.InputFloat("Font Size", ref pluginFontSize))
                 {
                     Plugin.Configuration.FontSize = pluginFontSize;
+                    Plugin.Configuration.Save();
+                }
+                if (ImGui.ColorPicker4("Font Colour", ref pluginTextColour))
+                {
+                    Plugin.Configuration.Colour = pluginTextColour;
                     Plugin.Configuration.Save();
                 }
                 ImGui.EndTabItem();
@@ -112,13 +123,7 @@ public class MainWindow : Window, IDisposable
         if (ImGui.ListBox("##Sessions", ref _selectedSession, sessionNames, sessionNames.Length, 24))
         {
             _currentSession = sessionList[sessionNames[_selectedSession]];
-            List<string> newKnockoutList = new List<string>();
-            foreach (var knockout in _currentSession.Knockouts)
-            {
-                newKnockoutList.Add(knockout.PlayerKnockedOut);
-            }
-            _knockouts = newKnockoutList.ToArray();
-            _sessionTime = (_currentSession.SessionEnd - _currentSession.SessionStart).ToString("h':'mm':'ss");
+            _previousKnockoutCount = 0;
         }
         ImGui.TableSetColumnIndex(1);
         DrawKnockouts();
@@ -128,22 +133,127 @@ public class MainWindow : Window, IDisposable
     {
         if (_currentSession != null)
         {
-            ImGui.Text("Knockouts This Session: " + _currentSession.Knockouts.Count);
-            ImGui.Text("Best Knockout Streak: " + _currentSession.HighestKnockoutStreak);
-            ImGui.Text($"Session Length: {_sessionTime}");
-            ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-            if (ImGui.ListBox("##Knockouts", ref _selectedKnockout, _knockouts, _knockouts.Length, Math.Clamp(_knockouts.Length, 0, 10)))
+            if (ImGui.BeginTabBar("Transcripts Overview"))
             {
-                _currentKnockout = _currentSession.Knockouts[_selectedKnockout];
-            }
-            if (_currentKnockout != null)
-            {
-                ImGui.Text("You knocked out " + _currentKnockout.PlayerKnockedOut + " at " + _currentKnockout.KnockoutDateTime.ToString("MM/dd/yyyy HH:mm"));
+                if (ImGui.BeginTabItem("Session Overview"))
+                {
+                    DrawSessionOverview();
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Raw Transcripts"))
+                {
+                    DrawTranscripts();
+                    ImGui.EndTabItem();
+                }
+                ImGui.EndTabBar();
             }
         }
         else
         {
             ImGui.Text($"Select a character and a session to view past statistics.\r\nIf no sessions exist, start playing some PVP matches!");
+        }
+    }
+
+    private void DrawTranscripts()
+    {
+        if (ImGui.BeginTabBar("Transcripts Overview"))
+        {
+            if (ImGui.BeginTabItem("Related To You"))
+            {
+                var transcriptItems = _currentSession.RelatedToPlayer.ToArray();
+                var index = 0;
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.ListBox("##Related To You", ref index, transcriptItems, transcriptItems.Length, 20))
+                {
+                }
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Related To Others"))
+            {
+                var transcriptItems = _currentSession.RelatedToOthers.ToArray();
+                var index = 0;
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.ListBox("##Related To Others", ref index, transcriptItems, transcriptItems.Length, 20))
+                {
+                }
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Everything"))
+            {
+                var transcriptItems = _currentSession.FullTranscript.ToArray();
+                var index = 0;
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.ListBox("##Everything", ref index, transcriptItems, transcriptItems.Length, 20))
+                {
+                }
+                ImGui.EndTabItem();
+            }
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawSessionOverview()
+    {
+        ImGui.Text("Knockouts This Session: " + _currentSession.Knockouts.Count);
+        ImGui.Text("Best Knockout Streak: " + _currentSession.HighestKnockoutStreak);
+        ImGui.Text("Defeats: " + _currentSession.KnockoutsByOtherPlayer.Count);
+        var sessionTime = (_currentSession.SessionEnd - _currentSession.SessionStart).ToString("h':'mm':'ss");
+        ImGui.Text($"Session Length: {sessionTime}");
+        if (_currentSession.Knockouts.Count > _previousKnockoutCount)
+        {
+            List<string> newKnockoutList = new List<string>();
+            foreach (var knockout in _currentSession.Knockouts)
+            {
+                newKnockoutList.Add(knockout.RelatedPlayer);
+            }
+            _knockouts = newKnockoutList.ToArray();
+            _previousKnockoutCount = _knockouts.Length;
+        }
+        if (_currentSession.KnockoutsByOtherPlayer.Count > _previousDefeatCount)
+        {
+            List<string> newDefeatList = new List<string>();
+            foreach (var knockout in _currentSession.KnockoutsByOtherPlayer)
+            {
+                newDefeatList.Add(knockout.RelatedPlayer);
+            }
+            _defeats = newDefeatList.ToArray();
+            _previousDefeatCount = _defeats.Length;
+        }
+        if (ImGui.BeginTabBar("Knockout Statistics"))
+        {
+            if (ImGui.BeginTabItem("Knockouts"))
+            {
+                if (_currentSession.Knockouts.Count > 0)
+                {
+                    ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                    if (ImGui.ListBox("##Knockouts", ref _selectedKnockout, _knockouts, _knockouts.Length, Math.Clamp(_knockouts.Length, 0, 10)))
+                    {
+                        _currentKnockout = _currentSession.Knockouts[_selectedKnockout];
+                    }
+                    if (_currentKnockout != null)
+                    {
+                        ImGui.Text("You knocked out " + _currentKnockout.RelatedPlayer + " at " + _currentKnockout.KnockoutDateTime.ToString("MM/dd/yyyy HH:mm"));
+                    }
+                }
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Defeats"))
+            {
+                if (_currentSession.KnockoutsByOtherPlayer.Count > 0)
+                {
+                    ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                    if (ImGui.ListBox("##Defeats", ref _selectedDefeat, _defeats, _defeats.Length, Math.Clamp(_defeats.Length, 0, 10)))
+                    {
+                        _currentDefeat = _currentSession.KnockoutsByOtherPlayer[_selectedDefeat];
+                    }
+                    if (_currentDefeat != null)
+                    {
+                        ImGui.Text("You were defeated by " + _currentDefeat.RelatedPlayer + " at " + _currentDefeat.KnockoutDateTime.ToString("MM/dd/yyyy HH:mm"));
+                    }
+                }
+                ImGui.EndTabItem();
+            }
+            ImGui.EndTabBar();
         }
     }
 }

@@ -81,6 +81,9 @@ public sealed class Plugin : IDalamudPlugin
         // in response to the slash command, just toggle the display status of our main ui
         switch (args.ToLower())
         {
+            case "defeat":
+                KoCounter.DebugDefeat();
+                break;
             case "increment":
                 KoCounter.DebugIncrement();
                 break;

@@ -4,6 +4,7 @@ using KoCounter;
 using KoCounter.DataTypes;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -51,7 +52,7 @@ namespace KoCounter.Logic
 
         private void Framework_Update(IFramework framework)
         {
-            if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvPExcludingDen && Plugin.Configuration.Enabled)
+            if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvP && Plugin.Configuration.Enabled && _currentSession != null)
             {
                 if (Plugin.ClientState.LocalPlayer != null)
                 {
@@ -61,6 +62,7 @@ namespace KoCounter.Logic
                         {
                             _wasKnockedOut = true;
                             _knockoutStreak = 0;
+                            _currentSession.Defeats++;
                         }
                     }
                     else if (_wasKnockedOut)
@@ -68,6 +70,10 @@ namespace KoCounter.Logic
                         _wasKnockedOut = false;
                     }
                 }
+            }
+            if (_currentSession != null)
+            {
+                _currentSession.SessionEnd = DateTime.Now;
             }
         }
 
@@ -80,24 +86,38 @@ namespace KoCounter.Logic
                 Plugin.Configuration.Save();
             }
 
-            if (Plugin.ClientState.IsPvP || obj == 250)
+            Task.Run(() =>
             {
-                _sessionStart = DateTime.Now;
-                _sessionId = DateTime.Now.ToString("MM/dd/yyyy HH:mm");
-                _currentPlayerSessionList = Plugin.Configuration.Characters[Plugin.ClientState.LocalPlayer.Name.TextValue].Sessions;
-                if (!_currentPlayerSessionList.ContainsKey(_sessionId))
+                var territory = obj;
+                while (!Plugin.ClientState.IsPvP && obj != 250)
                 {
-                    _currentPlayerSessionList[_sessionId] = new DataTypes.Session() { SessionId = _sessionId, SessionStart = _sessionStart, };
-                    _currentSession = _currentPlayerSessionList[_sessionId];
-                    _currentSession.TerritoryId = obj;
+                    Thread.Sleep(1000);
                 }
-            }
+                if ((Plugin.ClientState.IsPvP || obj == 250) && Plugin.ClientState.TerritoryType == territory)
+                {
+                    _sessionStart = DateTime.Now;
+                    _sessionId = DateTime.Now.ToString("MM/dd/yyyy HH:mm");
+                    _currentPlayerSessionList = Plugin.Configuration.Characters[Plugin.ClientState.LocalPlayer.Name.TextValue].Sessions;
+                    if (!_currentPlayerSessionList.ContainsKey(_sessionId))
+                    {
+                        _currentPlayerSessionList[_sessionId] = new DataTypes.Session() { SessionId = _sessionId, SessionStart = _sessionStart, };
+                        _currentSession = _currentPlayerSessionList[_sessionId];
+                        _currentSession.TerritoryId = obj;
+                    }
+                }
+            });
         }
 
         public void DebugIncrement()
         {
             string name = "";
             string message = "You have defeated Debug Person";
+            ProcessChat((Dalamud.Game.Text.XivChatType)2874, 0, name, message);
+        }
+        public void DebugDefeat()
+        {
+            string name = "";
+            string message = Plugin.ClientState.LocalPlayer.Name.TextValue + " is defeated by Debug Person";
             ProcessChat((Dalamud.Game.Text.XivChatType)2874, 0, name, message);
         }
         private void ChatGui_ChatMessage(Dalamud.Game.Text.XivChatType type, int timestamp,
@@ -125,18 +145,31 @@ namespace KoCounter.Logic
                             case 2874:
                                 Task.Run(() =>
                                 {
-                                    _currentSession.Knockouts.Add(new DataTypes.Knockout(tokens[tokens.Length - 2] + " " + tokens[tokens.Length - 1]));
-                                    _knockoutStreak++;
-                                    if (_knockoutStreak > _currentSession.HighestKnockoutStreak)
+                                    if (messageAsString.Contains("defeated by"))
                                     {
-                                        _currentSession.HighestKnockoutStreak = _knockoutStreak;
+                                        _currentSession.KnockoutsByOtherPlayer.Add(new DataTypes.Knockout(tokens[tokens.Length - 2] + " " + tokens[tokens.Length - 1]));
                                     }
+                                    else
+                                    {
+                                        _currentSession.Knockouts.Add(new DataTypes.Knockout(tokens[tokens.Length - 2] + " " + tokens[tokens.Length - 1]));
+                                        _knockoutStreak++;
+                                        if (_knockoutStreak > _currentSession.HighestKnockoutStreak)
+                                        {
+                                            _currentSession.HighestKnockoutStreak = _knockoutStreak;
+                                        }
+                                    }
+                                    _currentSession.RelatedToPlayer.Add(messageAsString);
+                                    _currentSession.FullTranscript.Add(messageAsString);
                                 });
+                                Plugin.PluginLog.Debug((int)type + ": " + messageAsString);
                                 break;
                             case 4922:
                                 Task.Run(() =>
                                 {
+                                    _currentSession.RelatedToOthers.Add(messageAsString);
+                                    _currentSession.FullTranscript.Add(messageAsString);
                                 });
+                                Plugin.PluginLog.Debug((int)type + ": " + messageAsString);
                                 break;
 
                         }

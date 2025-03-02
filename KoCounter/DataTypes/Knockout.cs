@@ -5,15 +5,15 @@ namespace KoCounter.DataTypes
     public class Knockout
     {
         DateTime _knockoutDateTime;
-        string _playerKnockedOut;
+        string _relatedPlayer;
 
         public DateTime KnockoutDateTime { get => _knockoutDateTime; set => _knockoutDateTime = value; }
-        public string PlayerKnockedOut { get => _playerKnockedOut; set => _playerKnockedOut = value; }
+        public string RelatedPlayer { get => _relatedPlayer; set => _relatedPlayer = value; }
 
         public Knockout(string playerKnockedOut)
         {
             _knockoutDateTime = DateTime.Now;
-            _playerKnockedOut = playerKnockedOut;
+            _relatedPlayer = playerKnockedOut;
         }
     }
 }
