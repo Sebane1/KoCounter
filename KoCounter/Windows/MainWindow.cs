@@ -104,9 +104,16 @@ public class MainWindow : Window, IDisposable
         var bestKnockoutStreak = Plugin.Configuration.DisplayBestKnockoutStreak;
         var defeats = Plugin.Configuration.DisplayDefeats;
 
+        var displayLocked = Plugin.Configuration.DisplayLocked;
+
         if (ImGui.Checkbox("Tracking Enabled", ref pluginEnabled))
         {
             Plugin.Configuration.Enabled = pluginEnabled;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Lock Display", ref displayLocked))
+        {
+            Plugin.Configuration.DisplayLocked = displayLocked;
             Plugin.Configuration.Save();
         }
         if (ImGui.Checkbox("Display Knockouts", ref knockouts))

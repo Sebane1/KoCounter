@@ -9,6 +9,8 @@ namespace KoCounter.Windows;
 
 public class KnockoutDisplay : Window, IDisposable
 {
+    private ImGuiWindowFlags _defaults;
+    private ImGuiWindowFlags _locked;
     private string GoatImagePath;
     private Plugin Plugin;
 
@@ -24,7 +26,10 @@ public class KnockoutDisplay : Window, IDisposable
             MinimumSize = new Vector2(100, 100),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
-
+        _defaults = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse
+                    | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar;
+        _locked = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse
+            | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoInputs;
         GoatImagePath = goatImagePath;
         Plugin = plugin;
     }
@@ -43,6 +48,19 @@ public class KnockoutDisplay : Window, IDisposable
         base.OnClose();
         Plugin.Configuration.CounterVisible = false;
         Plugin.Configuration.Save();
+    }
+
+    public override void PreDraw()
+    {
+        base.PreDraw();
+        if (Plugin.Configuration.DisplayLocked)
+        {
+            Flags = _locked;
+        }
+        else
+        {
+            Flags = _defaults;
+        }
     }
 
     public override void Draw()

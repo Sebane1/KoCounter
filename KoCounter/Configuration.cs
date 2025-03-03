@@ -12,7 +12,7 @@ namespace KoCounter;
 public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
-    private bool _enabled = false;
+    private bool _enabled = true;
     private bool _counterVisible = false;
     private bool _debugCommands = false;
 
@@ -20,6 +20,8 @@ public class Configuration : IPluginConfiguration
     private bool _displayKnockoutStreak = true;
     private bool _displayBestKnockoutStreak = true;
     private bool _displayDefeats = true;
+
+    private bool _displayLocked = false;
 
     public Dictionary<string, CharacterStats> Characters { get => _characters; set => _characters = value; }
     public bool Enabled { get => _enabled; set => _enabled = value; }
@@ -31,6 +33,7 @@ public class Configuration : IPluginConfiguration
     public bool DisplayKnockoutStreak { get => _displayKnockoutStreak; set => _displayKnockoutStreak = value; }
     public bool DisplayBestKnockoutStreak { get => _displayBestKnockoutStreak; set => _displayBestKnockoutStreak = value; }
     public bool DisplayDefeats { get => _displayDefeats; set => _displayDefeats = value; }
+    public bool DisplayLocked { get => _displayLocked; set => _displayLocked = value; }
 
     Dictionary<string, CharacterStats> _characters = new Dictionary<string, CharacterStats>();
     private float _fontSize = 1;

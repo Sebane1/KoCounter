@@ -106,9 +106,17 @@ public sealed class Plugin : IDalamudPlugin
             case "details":
                 ToggleConfigUI();
                 break;
+            case "lock":
+                Plugin.Configuration.DisplayLocked = !Plugin.Configuration.DisplayLocked;
+                break;
+            case "tracking":
+                Plugin.Configuration.Enabled = !Plugin.Configuration.Enabled;
+                break;
             case "help":
                 string help = "/koc (toggles session display)\r\n" +
                     "/koc details (toggles past sessions and settings)\r\n" +
+                    "/koc tracking (toggles session tracking)\r\n" +
+                    "/koc lock (locks the display position)\r\n" +
                     (Plugin.Configuration.DebugCommands ? "/koc debug increment (increments knockout counter)\r\n" +
                     "/koc debug defeat (increments knockout counter)\r\n" +
                     "/koc debug reset (resets session)" : "");
