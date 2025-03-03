@@ -172,6 +172,7 @@ public class MainWindow : Window, IDisposable
         {
             _currentSession = sessionList[sessionNames[_selectedSession]];
             _previousKnockoutCount = 0;
+            _previousDefeatCount = 0;
         }
         ImGui.TableSetColumnIndex(1);
         DrawKnockouts();

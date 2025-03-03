@@ -112,6 +112,7 @@ public sealed class Plugin : IDalamudPlugin
                     (Plugin.Configuration.DebugCommands ? "/koc debug increment (increments knockout counter)\r\n" +
                     "/koc debug defeat (increments knockout counter)\r\n" +
                     "/koc debug reset (resets session)" : "");
+                Plugin.ChatGui.Print(help);
                 break;
             default:
                 ToggleMainUI();
