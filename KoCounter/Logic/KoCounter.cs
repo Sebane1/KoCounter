@@ -2,6 +2,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using KoCounter;
 using KoCounter.DataTypes;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -19,6 +20,7 @@ namespace KoCounter.Logic
         private Session _currentSession;
         private bool _wasKnockedOut;
         int _knockoutStreak;
+        private bool _initialized;
 
         public Session CurrentSession { get => _currentSession; set => _currentSession = value; }
         public int KnockoutStreak { get => _knockoutStreak; set => _knockoutStreak = value; }
@@ -28,13 +30,6 @@ namespace KoCounter.Logic
             Plugin.ChatGui.ChatMessage += ChatGui_ChatMessage;
             Plugin.ClientState.TerritoryChanged += ClientState_TerritoryChanged;
             Plugin.Framework.Update += Framework_Update;
-            Plugin.ClientState.Login += ClientState_Login;
-            Initialize();
-        }
-
-        private void ClientState_Login()
-        {
-            Initialize();
         }
 
         void Initialize()
@@ -47,11 +42,17 @@ namespace KoCounter.Logic
                     Plugin.Configuration.Characters[name] = new CharacterStats() { CharacterName = name };
                 }
                 ClientState_TerritoryChanged(Plugin.ClientState.TerritoryType);
+                Plugin.KnockoutDisplay.IsOpen = Plugin.Configuration.CounterVisible;
             }
         }
 
         private void Framework_Update(IFramework framework)
         {
+            if (Plugin.ClientState.IsLoggedIn && !_initialized)
+            {
+                Initialize();
+                _initialized = true;
+            }
             if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvP && Plugin.Configuration.Enabled && _currentSession != null)
             {
                 if (Plugin.ClientState.LocalPlayer != null)
@@ -79,30 +80,41 @@ namespace KoCounter.Logic
 
         private void ClientState_TerritoryChanged(ushort obj)
         {
+            NewSession(obj);
+        }
+
+        private void NewSession(ushort currentTerritory)
+        {
             if (_currentSession != null)
             {
                 _currentSession.SessionEnd = DateTime.Now;
+                if (_currentSession.Knockouts.Count > 0 && _currentSession.KnockoutsByOtherPlayer.Count > 0)
+                {
+                    _currentPlayerSessionList[_sessionId] = _currentSession;
+                }
                 _currentSession = null;
                 Plugin.Configuration.Save();
             }
 
             Task.Run(() =>
             {
-                var territory = obj;
-                while (!Plugin.ClientState.IsPvP && obj != 250)
+                var territory = currentTerritory;
+                Plugin.PluginLog.Debug("Wait for PVP to be active.");
+                while (!Plugin.ClientState.IsPvP && currentTerritory != 250 || Plugin.ClientState.LocalPlayer == null)
                 {
                     Thread.Sleep(1000);
                 }
-                if ((Plugin.ClientState.IsPvP || obj == 250) && Plugin.ClientState.TerritoryType == territory)
+                Plugin.PluginLog.Debug("Checking PVP state.");
+                if ((Plugin.ClientState.IsPvP || currentTerritory == 250))
                 {
+                    Plugin.PluginLog.Debug("Starting PVP session.");
                     _sessionStart = DateTime.Now;
                     _sessionId = DateTime.Now.ToString("MM/dd/yyyy HH:mm");
                     _currentPlayerSessionList = Plugin.Configuration.Characters[Plugin.ClientState.LocalPlayer.Name.TextValue].Sessions;
                     if (!_currentPlayerSessionList.ContainsKey(_sessionId))
                     {
-                        _currentPlayerSessionList[_sessionId] = new DataTypes.Session() { SessionId = _sessionId, SessionStart = _sessionStart, };
-                        _currentSession = _currentPlayerSessionList[_sessionId];
-                        _currentSession.TerritoryId = obj;
+                        _currentSession = new DataTypes.Session() { SessionId = _sessionId, SessionStart = _sessionStart, };
+                        _currentSession.TerritoryId = currentTerritory;
                     }
                 }
             });
@@ -119,6 +131,10 @@ namespace KoCounter.Logic
             string name = "";
             string message = Plugin.ClientState.LocalPlayer.Name.TextValue + " is defeated by Debug Person";
             ProcessChat((Dalamud.Game.Text.XivChatType)2874, 0, name, message);
+        }
+        public void DebugNewSession()
+        {
+            NewSession(Plugin.ClientState.TerritoryType);
         }
         private void ChatGui_ChatMessage(Dalamud.Game.Text.XivChatType type, int timestamp,
             ref Dalamud.Game.Text.SeStringHandling.SeString sender,

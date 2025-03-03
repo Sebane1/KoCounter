@@ -31,16 +31,42 @@ public class KnockoutDisplay : Window, IDisposable
 
     public void Dispose() { }
 
+    public override void OnOpen()
+    {
+        base.OnOpen();
+        Plugin.Configuration.CounterVisible = true;
+        Plugin.Configuration.Save();
+    }
+
+    public override void OnClose()
+    {
+        base.OnClose();
+        Plugin.Configuration.CounterVisible = false;
+        Plugin.Configuration.Save();
+    }
+
     public override void Draw()
     {
         ImGui.SetWindowFontScale(Plugin.Configuration.FontSize);
         ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(Plugin.Configuration.Colour));
         if (Plugin.KoCounter.CurrentSession != null)
         {
-            ImGui.Text("Knockouts: " + Plugin.KoCounter.CurrentSession.Knockouts.Count);
-            ImGui.Text("Knockout Streak: " + Plugin.KoCounter.KnockoutStreak);
-            ImGui.Text("Best Knockout Streak: " + Plugin.KoCounter.CurrentSession.HighestKnockoutStreak);
-            ImGui.Text("Defeats: " + Plugin.KoCounter.CurrentSession.KnockoutsByOtherPlayer.Count);
+            if (Plugin.Configuration.DisplayKnockouts)
+            {
+                ImGui.Text("Knockouts: " + Plugin.KoCounter.CurrentSession.Knockouts.Count);
+            }
+            if (Plugin.Configuration.DisplayKnockoutStreak)
+            {
+                ImGui.Text("Knockout Streak: " + Plugin.KoCounter.KnockoutStreak);
+            }
+            if (Plugin.Configuration.DisplayBestKnockoutStreak)
+            {
+                ImGui.Text("Best Knockout Streak: " + Plugin.KoCounter.CurrentSession.HighestKnockoutStreak);
+            }
+            if (Plugin.Configuration.DisplayDefeats)
+            {
+                ImGui.Text("Defeats: " + Plugin.KoCounter.CurrentSession.Defeats);
+            }
         }
         else
         {

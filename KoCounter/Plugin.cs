@@ -29,7 +29,7 @@ public sealed class Plugin : IDalamudPlugin
     private static Logic.KoCounter _koCounter;
 
     private MainWindow MainWindow { get; init; }
-    public KnockoutDisplay KnockoutDisplay { get; }
+    public static KnockoutDisplay KnockoutDisplay { get; set; }
     public static Logic.KoCounter KoCounter { get => _koCounter; set => _koCounter = value; }
 
     public Plugin()
@@ -79,16 +79,39 @@ public sealed class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
-        switch (args.ToLower())
+        string[] splitArgs = args.Split(' ');
+        switch (splitArgs[0].ToLower())
         {
-            case "defeat":
-                KoCounter.DebugDefeat();
+            case "debug":
+                if (splitArgs.Length > 1 && Plugin.Configuration.DebugCommands)
+                {
+                    switch (splitArgs[1])
+                    {
+                        case "increment":
+                            KoCounter.DebugIncrement();
+                            break;
+                        case "defeat":
+                            KoCounter.DebugDefeat();
+                            break;
+                        case "reset":
+                            KoCounter.DebugNewSession();
+                            break;
+                    }
+                }
                 break;
-            case "increment":
-                KoCounter.DebugIncrement();
+            case "debug defeat":
                 break;
-            case "stats":
+            case "debug reset":
+                break;
+            case "details":
                 ToggleConfigUI();
+                break;
+            case "help":
+                string help = "/koc (toggles session display)\r\n" +
+                    "/koc details (toggles past sessions and settings)\r\n" +
+                    (Plugin.Configuration.DebugCommands ? "/koc debug increment (increments knockout counter)\r\n" +
+                    "/koc debug defeat (increments knockout counter)\r\n" +
+                    "/koc debug reset (resets session)" : "");
                 break;
             default:
                 ToggleMainUI();

@@ -74,27 +74,75 @@ public class MainWindow : Window, IDisposable
             }
             if (ImGui.BeginTabItem("Settings"))
             {
-                var pluginEnabled = Plugin.Configuration.Enabled;
-                var pluginFontSize = Plugin.Configuration.FontSize;
-                var pluginTextColour = Plugin.Configuration.Colour;
-                if (ImGui.Checkbox("Tracking Enabled", ref pluginEnabled))
-                {
-                    Plugin.Configuration.Enabled = pluginEnabled;
-                    Plugin.Configuration.Save();
-                }
-                if (ImGui.InputFloat("Font Size", ref pluginFontSize))
-                {
-                    Plugin.Configuration.FontSize = pluginFontSize;
-                    Plugin.Configuration.Save();
-                }
-                if (ImGui.ColorPicker4("Font Colour", ref pluginTextColour))
-                {
-                    Plugin.Configuration.Colour = pluginTextColour;
-                    Plugin.Configuration.Save();
-                }
+                DrawSettings();
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Credits"))
+            {
+                DrawCredits();
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawCredits()
+    {
+        ImGui.Text("Plugin concept made and funded by Aresyne Skye.");
+        ImGui.Text("Programmed and designed by Sebby.");
+    }
+
+    private void DrawSettings()
+    {
+        var pluginEnabled = Plugin.Configuration.Enabled;
+        var pluginDebug = Plugin.Configuration.DebugCommands;
+        var pluginFontSize = Plugin.Configuration.FontSize;
+        var pluginTextColour = Plugin.Configuration.Colour;
+
+        var knockouts = Plugin.Configuration.DisplayKnockouts;
+        var knockoutStreak = Plugin.Configuration.DisplayKnockoutStreak;
+        var bestKnockoutStreak = Plugin.Configuration.DisplayBestKnockoutStreak;
+        var defeats = Plugin.Configuration.DisplayDefeats;
+
+        if (ImGui.Checkbox("Tracking Enabled", ref pluginEnabled))
+        {
+            Plugin.Configuration.Enabled = pluginEnabled;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Display Knockouts", ref knockouts))
+        {
+            Plugin.Configuration.DisplayKnockouts = knockouts;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Display Knockout Streak", ref knockoutStreak))
+        {
+            Plugin.Configuration.DisplayKnockoutStreak = knockoutStreak;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Display Best Knockout Streak", ref bestKnockoutStreak))
+        {
+            Plugin.Configuration.DisplayBestKnockoutStreak = bestKnockoutStreak;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Display Defeats", ref defeats))
+        {
+            Plugin.Configuration.DisplayDefeats = defeats;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.SliderFloat("Font Size", ref pluginFontSize, 0.1f, 10))
+        {
+            Plugin.Configuration.FontSize = pluginFontSize;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.ColorEdit4("Font Colour", ref pluginTextColour))
+        {
+            Plugin.Configuration.Colour = pluginTextColour;
+            Plugin.Configuration.Save();
+        }
+        if (ImGui.Checkbox("Debug Commands Enabled", ref pluginDebug))
+        {
+            Plugin.Configuration.DebugCommands = pluginDebug;
+            Plugin.Configuration.Save();
         }
     }
 
@@ -196,7 +244,7 @@ public class MainWindow : Window, IDisposable
     {
         ImGui.Text("Knockouts This Session: " + _currentSession.Knockouts.Count);
         ImGui.Text("Best Knockout Streak: " + _currentSession.HighestKnockoutStreak);
-        ImGui.Text("Defeats: " + _currentSession.KnockoutsByOtherPlayer.Count);
+        ImGui.Text("Defeats: " + _currentSession.Defeats);
         var sessionTime = (_currentSession.SessionEnd - _currentSession.SessionStart).ToString("h':'mm':'ss");
         ImGui.Text($"Session Length: {sessionTime}");
         if (_currentSession.Knockouts.Count > _previousKnockoutCount)
