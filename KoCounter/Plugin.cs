@@ -108,9 +108,11 @@ public sealed class Plugin : IDalamudPlugin
                 break;
             case "lock":
                 Plugin.Configuration.DisplayLocked = !Plugin.Configuration.DisplayLocked;
+                Plugin.Configuration.Save();
                 break;
             case "tracking":
                 Plugin.Configuration.Enabled = !Plugin.Configuration.Enabled;
+                Plugin.Configuration.Save();
                 break;
             case "help":
                 string help = "/koc (toggles session display)\r\n" +
