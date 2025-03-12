@@ -28,10 +28,8 @@ namespace KoCounter.Logic
         public KoCounter()
         {
             Plugin.ChatGui.ChatMessage += ChatGui_ChatMessage;
-            Plugin.ClientState.TerritoryChanged += ClientState_TerritoryChanged;
             Plugin.Framework.Update += Framework_Update;
         }
-
         void Initialize()
         {
             if (Plugin.ClientState.LocalPlayer != null)
@@ -53,27 +51,40 @@ namespace KoCounter.Logic
                 Initialize();
                 _initialized = true;
             }
-            if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvP && Plugin.Configuration.Enabled && _currentSession != null)
+
+            // Make sure we're in a valid PVP session before we check player death
+            // (Yes, we are checking this each frame. There is no on death event provided by Dalamud).
+            if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvP 
+                && Plugin.Configuration.Enabled && _currentSession != null)
             {
+                // Check that player exists.
                 if (Plugin.ClientState.LocalPlayer != null)
                 {
+                    // Check if the player is dead.
                     if (Plugin.ClientState.LocalPlayer.IsDead)
                     {
                         if (!_wasKnockedOut)
                         {
+                            // Prevent logic from triggering again until we're dead again.
                             _wasKnockedOut = true;
+
+                            // Reset knockout streak.
                             _knockoutStreak = 0;
+
+                            // Increase defeats if the player is dead.
                             _currentSession.Defeats++;
                         }
                     }
                     else if (_wasKnockedOut)
                     {
+                        // Reset knockout state.
                         _wasKnockedOut = false;
                     }
                 }
             }
             if (_currentSession != null)
             {
+                // Refresh the session time.
                 _currentSession.SessionEnd = DateTime.Now;
             }
         }
