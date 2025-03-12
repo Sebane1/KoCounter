@@ -30,6 +30,7 @@ namespace KoCounter.Logic
             Plugin.ChatGui.ChatMessage += ChatGui_ChatMessage;
             Plugin.Framework.Update += Framework_Update;
         }
+
         void Initialize()
         {
             if (Plugin.ClientState.LocalPlayer != null)
@@ -57,35 +58,40 @@ namespace KoCounter.Logic
             if (Plugin.ClientState.IsLoggedIn && Plugin.ClientState.IsPvP 
                 && Plugin.Configuration.Enabled && _currentSession != null)
             {
-                // Check that player exists.
-                if (Plugin.ClientState.LocalPlayer != null)
-                {
-                    // Check if the player is dead.
-                    if (Plugin.ClientState.LocalPlayer.IsDead)
-                    {
-                        if (!_wasKnockedOut)
-                        {
-                            // Prevent logic from triggering again until we're dead again.
-                            _wasKnockedOut = true;
-
-                            // Reset knockout streak.
-                            _knockoutStreak = 0;
-
-                            // Increase defeats if the player is dead.
-                            _currentSession.Defeats++;
-                        }
-                    }
-                    else if (_wasKnockedOut)
-                    {
-                        // Reset knockout state.
-                        _wasKnockedOut = false;
-                    }
-                }
+                CheckPlayerDeath();
             }
             if (_currentSession != null)
             {
                 // Refresh the session time.
                 _currentSession.SessionEnd = DateTime.Now;
+            }
+        }
+
+        private void CheckPlayerDeath()
+        {
+            // Check that player exists.
+            if (Plugin.ClientState.LocalPlayer != null)
+            {
+                // Check if the player is dead.
+                if (Plugin.ClientState.LocalPlayer.IsDead)
+                {
+                    if (!_wasKnockedOut)
+                    {
+                        // Prevent logic from triggering again until we're dead again.
+                        _wasKnockedOut = true;
+
+                        // Reset knockout streak.
+                        _knockoutStreak = 0;
+
+                        // Increase defeats if the player is dead.
+                        _currentSession.Defeats++;
+                    }
+                }
+                else if (_wasKnockedOut)
+                {
+                    // Reset knockout state.
+                    _wasKnockedOut = false;
+                }
             }
         }
 
