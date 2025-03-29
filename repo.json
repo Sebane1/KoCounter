@@ -8,8 +8,8 @@
       "Pvp"
     ],
     "InternalName": "KoCounter",
-    "AssemblyVersion": "0.0.0.2",
-    "TestingAssemblyVersion": "0.0.0.2",
+    "AssemblyVersion": "0.0.0.3",
+    "TestingAssemblyVersion": "0.0.0.3",
     "RepoUrl": "https://github.com/Sebane1/KoCounter",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 12,
@@ -17,9 +17,9 @@
     "IsTestingExclusive": "False",
     "DownloadCount": 0,
     "LastUpdate": 0,
-    "DownloadLinkInstall": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.2/KoCounter.zip",
-    "DownloadLinkTesting": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.2/KoCounter.zip",
-    "DownloadLinkUpdate": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.2/KoCounter.zip",
+    "DownloadLinkInstall": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.3/KoCounter.zip",
+    "DownloadLinkTesting": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.3/KoCounter.zip",
+    "DownloadLinkUpdate": "https://github.com/Sebane1/KoCounter/releases/download/0.0.0.3/KoCounter.zip",
     "IconUrl": ""
   }
 ]
